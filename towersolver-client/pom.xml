@@ -6,7 +6,7 @@
   <parent>
   	<groupId>com.kalulu</groupId>
   	<artifactId>kalulu-parent</artifactId>
-  	<version>0.0.1-SNAPSHOT</version>
+  	<version>0.1</version>
   	<relativePath>../kalulu-parent/pom.xml</relativePath>
   </parent>
 
@@ -180,4 +180,5 @@
   <properties>
   	<org.reddwarfserver.version>0.10.3-SNAPSHOT</org.reddwarfserver.version>
   </properties>
+  <version>0.0.1-SNAPSHOT</version>
 </project>

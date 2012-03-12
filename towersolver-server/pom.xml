@@ -1,12 +1,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.kalulu.es.swtor</groupId>
-  <artifactId>towersolver</artifactId>
+  <artifactId>towersolver-server</artifactId>
   <inceptionYear>2012</inceptionYear>
   <parent>
   	<groupId>com.kalulu</groupId>
   	<artifactId>kalulu-parent</artifactId>
-  	<version>0.0.1-SNAPSHOT</version>
+  	<version>0.1</version>
   	<relativePath>../kalulu-parent/pom.xml</relativePath>
   </parent>
 
@@ -214,4 +214,5 @@
       </plugin>
     </plugins>
   </reporting>
+  <version>0.0.1-SNAPSHOT</version>
 </project>
