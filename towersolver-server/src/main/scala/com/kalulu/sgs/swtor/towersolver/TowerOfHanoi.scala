@@ -19,7 +19,6 @@ import scala.collection.parallel.ForkJoinTasks
 import scala.concurrent.forkjoin.ForkJoinTask
 import scala.concurrent.forkjoin.RecursiveAction
 import java.util.concurrent.TimeUnit
-import scalax.collection.GraphEdge.UnDiEdge
 import org.jgrapht.UndirectedGraph
 import org.jgrapht.graph.DefaultEdge
 import org.jgrapht.graph.SimpleGraph
