@@ -73,6 +73,16 @@
     	<groupId>ch.qos.logback</groupId>
     	<artifactId>logback-classic</artifactId>
     </dependency>
+    <dependency>
+    	<groupId>com.assembla.scala-incubator</groupId>
+    	<artifactId>graph-core_${scala.base.version}</artifactId>
+    	<version>1.4.2</version>
+    </dependency>
+    <dependency>
+    	<groupId>jgrapht</groupId>
+    	<artifactId>jgrapht</artifactId>
+    	<version>0.8.3</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -91,9 +101,9 @@
           </execution>
         </executions>
         <configuration>
-          <scalaVersion>${scala.version}</scalaVersion>
           <args>
             <arg>-target:jvm-1.5</arg>
+            <arg>-explaintypes</arg>
           </args>
         </configuration>
       </plugin>
