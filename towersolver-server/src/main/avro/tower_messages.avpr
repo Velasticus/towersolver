@@ -1,0 +1,74 @@
+{
+  "namespace" : "com.kalulu.sgs.swtor.towersolver.protocol",
+  "protocol" : "MainLobby",
+  "doc" : "Describes messages between the tower solver server and clients",
+  
+  "types" : [
+    {
+       "namespace" : "com.kalulu.sgs.swtor.towersolver.protocol",
+        "name" : "PersistentObjectType",
+        "type" : "enum",
+        "symbols" : ["SERVER", "PLAYER", "CHARACTER", "GUILD"]
+    },    {
+       "namespace" : "com.kalulu.sgs.swtor.towersolver.protocol.server",
+        "name" : "ServerType",
+        "type" : "enum",
+        "symbols" : ["PVE", "PVP", "RPPVE", "RPPVP"]
+    },{
+        "namespace" : "com.kalulu.sgs.swtor.towersolver.protocol.server",
+        "name" : "ServerRegion",
+        "type" : "enum",
+        "symbols" : ["EAST", "WEST", "ENGLISH", "FRENCH", "GERMAN"]
+    },{
+        "namespace" : "com.kalulu.sgs.swtor.towersolver.protocol.server",
+        "name" : "ServerContinent",
+        "type" : "enum",
+        "symbols" : ["AMERICA", "EUROPE", "ASIA"]
+    },{
+        "namespace" : "com.kalulu.sgs.swtor.towersolver.protocol.server",
+        "name" : "ServerPopulation",
+        "type" : "enum",
+        "symbols" : ["LIGHT", "STANDARD", "HEAVY", "VERY_HEAVY", "FULL"]
+    },{
+        "namespace" : "com.kalulu.sgs.swtor.towersolver.protocol.server",
+        "name" : "ServerStatus",
+        "type" : "enum",
+        "symbols" : ["DOWN", "UP"]
+    },{
+        "namespace" : "com.kalulu.sgs.swtor.towersolver.protocol.server",
+        "name" : "SingleServer",
+        "type" : "record",
+        "fields" : [
+          { "name" : "name",      "type" : "string" },
+          { "name" : "type",      "type" : "ServerType" },
+          { "name" : "region",    "type" : "ServerRegion" },
+          { "name" : "continent", "type" : "ServerContinent" },
+          { "name" : "population","type" : "ServerPopulation" },
+          { "name" : "status",     "type" : "ServerStatus" },
+          { "name" : "objectType","type" : [ "null", "com.kalulu.sgs.swtor.towersolver.protocol.PersistentObjectType"] }
+        ]
+    }
+  ],
+  "messages" : {
+    "GetServerList" : {
+      "doc" : "Request the list of servers, their descriptions, and their statuses",
+      "request" : [],
+      "response" : { 
+        "name" : "servers",
+        "type" : "array",
+        "items": "com.kalulu.sgs.swtor.towersolver.protocol.server.SingleServer"
+      }
+    },
+    "GetServerStatus" : {
+      "doc" : "Request the status of a servers",
+      "request" : [{ "name" : "server", "type" : "string" }],
+      "response" : "com.kalulu.sgs.swtor.towersolver.protocol.server.ServerStatus"
+    },
+    "SelectServer" : {
+      "doc" : "Chooses the server to join",
+      "request" : [{ "name" : "server", "type" : "string" }],
+      "response" : [],
+      "oneway" : true
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "namespace" : "com.kalulu.sgs.swtor.towersolver.messages",
+  "name" : "Server",
+  "type" : "record",
+  "fields" : [
+    { "name" : "name", "type" : "string" },
+    { "name" : "type", "type" : {
+        "namespace" : "com.kalulu.sgs.swtor.towersolver.messages.server",
+        "name" : "ServerTypes",
+        "type" : "enum",
+        "symbols" : ["PVE", "PVP", "RPPVE", "RPPVP"]
+      }
+    },
+    { "name" : "region", "type" : {
+        "namespace" : "com.kalulu.sgs.swtor.towersolver.messages.server",
+        "name" : "ServerRegions",
+        "type" : "enum",
+        "symbols" : ["EAST", "WEST", "ENGLISH", "FRENCH", "GERMAN"]
+      }
+    },
+    { "name" : "continent", "type" : {
+        "namespace" : "com.kalulu.sgs.swtor.towersolver.messages.server",
+        "name" : "ServerContinents",
+        "type" : "enum",
+        "symbols" : ["AMERICA", "EUROPE", "ASIA"]
+      }
+    },
+    { "name" : "state", "type" : {
+        "namespace" : "com.kalulu.sgs.swtor.towersolver.messages.server",
+        "name" : "ServerStates",
+        "type" : "enum",
+        "symbols" : ["DOWN", "LIGHT", "STANDARD", "HEAVY", "VERY_HEAVY", "FULL"]
+      }
+    }
+  ]
+}

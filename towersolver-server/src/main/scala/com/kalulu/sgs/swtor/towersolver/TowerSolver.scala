@@ -14,27 +14,35 @@ import java.io.UnsupportedEncodingException
 import com.sun.sgs.app.Channel
 import com.sun.sgs.app.Delivery
 import com.sun.sgs.app.ChannelListener
+import com.kalulu.sgs.swtor.towersolver.traits.PersistenceManager
+import com.kalulu.sgs.swtor.towersolver.persistence.ResultHandler
+import com.kalulu.sgs.swtor.towersolver.traits.ServerTrait
+import scala.collection.mutable.MutableList
+import com.kalulu.sgs.swtor.towersolver.tasks.UpdateServerTask
+import com.kalulu.sgs.swtor.towersolver.tasks.ServerList
 
 @serializable
 class TowerSolver extends AppListener with Task with Logging {
   private var loginCount = 0
   private var channel1 : ManagedReference[Channel] = null
-
-  private var subTaskRef : ManagedReference[TowerTimedTask] = null
+  private var servers : ManagedReference[List[String]] = null
+  private var persistence : PersistenceManager = null
+  
   import TowerSolver._
   
   override def initialize(props:Properties) {
-    setSubTask(new TowerTimedTask)
      
     val taskManager = AppContext.getTaskManager
     val chanManager = AppContext.getChannelManager
     
-    taskManager.schedulePeriodicTask(new TowerTimedTask, DELAY_MS, PERIOD_MS)
-    
     val c1 = chanManager.createChannel(CHANNEL_1_NAME, null, Delivery.RELIABLE)
     channel1 = AppContext.getDataManager.createReference(c1)
     chanManager.createChannel(CHANNEL_2_NAME, new TowerSolverChannelListener, Delivery.RELIABLE)
+  
+    val servers = ServerList()
+    val serversRef = AppContext.getDataManager.createReference(servers)
     
+    taskManager.schedulePeriodicTask(new UpdateServerTask(serversRef),5000,5000)
   }
     
   override def loggedIn(session:ClientSession) : ClientSessionListener = {
@@ -44,39 +52,9 @@ class TowerSolver extends AppListener with Task with Logging {
   }
 
   override def run : Unit = {
-    getSubTask match {
-      case null => logger.error("Unable to find subtask")
-      case subTask => subTask.run
-    }
-  }
-    
-  def getSubTask : TowerTimedTask = {
-    if (subTaskRef != null)
-      subTaskRef.get
-    null
-  }
-    
-  def setSubTask(subTask:TowerTimedTask) = {
-    if (subTask==null)
-      subTaskRef = null
-    else {
-      val dataManager = AppContext.getDataManager
-      subTaskRef = dataManager.createReference(subTask)
-    }
-  }
-}
 
-@serializable
-class TowerTimedTask extends ManagedObject with Task with Logging {
-  private var lastTimestamp = System.currentTimeMillis
-    
-  override def run : Unit = {
-    val timestamp = System.currentTimeMillis
-    val delta = timestamp - lastTimestamp
-    lastTimestamp = timestamp
-
-    logger.info("TowerTimer task: running at timestamp " + timestamp + " elapsed " + delta);
   }
+
 }
 
 object TowerSolver {
