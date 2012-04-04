@@ -12,6 +12,7 @@
   <modules>
     <module>towersolver-server</module>
     <module>towersolver-client</module>
+    <module>avro-utils</module>
   </modules>
   <version>0.0.1-SNAPSHOT</version>
 </project>

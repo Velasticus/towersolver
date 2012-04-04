@@ -98,10 +98,9 @@
         </configuration>
         <dependencies>
           <dependency>
-            <groupId>org.apache.avro</groupId>
-            <artifactId>avro-compiler</artifactId>
-            <version>${org.apache.avro.version}</version>
-            <classifier>templates</classifier>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>avro-utils</artifactId>
+            <version>${version}</version>
           </dependency>
         </dependencies>
       </plugin>
