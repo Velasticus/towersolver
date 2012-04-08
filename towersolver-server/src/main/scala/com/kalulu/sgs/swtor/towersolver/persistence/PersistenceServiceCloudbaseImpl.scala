@@ -4,16 +4,14 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.net.URI
 import java.util.Properties
-
 import scala.annotation.serializable
 import scala.collection.JavaConversions.iterableAsScalaIterable
 import scala.collection.JavaConversions.seqAsJavaList
-
+import scala.collection.mutable.Map
 import org.apache.avro.io.DecoderFactory
 import org.apache.avro.io.EncoderFactory
 import org.apache.avro.specific.SpecificDatumWriter
 import org.apache.avro.specific.SpecificDatumReader
-
 import com.couchbase.client.protocol.views.Query
 import com.couchbase.client.protocol.views.View
 import com.couchbase.client.protocol.views.ViewRow
@@ -32,27 +30,23 @@ import com.sun.sgs.services.app.AsyncCallable
 import com.sun.sgs.services.app.AsyncRunnable
 import com.sun.sgs.services.app.TransactionRunner
 import com.sun.sgs.service.TransactionProxy
-
 import net.spy.memcached.transcoders.Transcoder
 import net.spy.memcached.CachedData
+import com.weiglewilczek.slf4s.Logging
 
 class PersistenceServiceCloudbaseImpl(props:Properties,systemRegistry:ComponentRegistry,txnProxy:TransactionProxy)
   extends PersistenceServiceImpl(props,systemRegistry,txnProxy) with Serializable{
 
   // TODO Add this to configuration
   private val uris = new URI("http://localhost:8091/pools") :: Nil
-  @transient
-  private lazy val client = new CouchbaseClient(uris, "default", "")
   private val transcoder = ServerTranscoder()
-  @transient
-  private lazy val allServersView = client.getView("dev_servers","all_servers")
   
   def servers(resultHandler:ResultHandler[List[ServerTrait]]) = {
-    taskService.startTask(GetServersOperation(client,allServersView,transcoder), new OperationResult(resultHandler));
+    taskService.startTask(GetServersOperation(uris,transcoder), new OperationResult(resultHandler));
   }
   
   def servers_= (servers: List[ServerTrait]) = {
-    servers.foreach( server => client.set(server.name.replace(" ",""), Int.MaxValue, server, transcoder))
+    servers.foreach( server => PersistenceServiceCloudbaseImpl.client(uris).set(server.name.replace(" ",""), Int.MaxValue, server, transcoder))
   }
   
   def getPlayer( id : Int ) : Player = {
@@ -69,6 +63,15 @@ class PersistenceServiceCloudbaseImpl(props:Properties,systemRegistry:ComponentR
     null
   }
   
+}
+
+object PersistenceServiceCloudbaseImpl {
+  private val CLIENT_CACHE = Map[List[URI],CouchbaseClient]()
+  def client(uri:List[URI]) = {
+    CLIENT_CACHE.getOrElseUpdate(uri, {
+      new CouchbaseClient(uri, "default", "")
+    })
+  }
 }
 
 case class ServerTranscoder extends Transcoder[ServerTrait] {
@@ -116,16 +119,18 @@ case class ServerTranscoder extends Transcoder[ServerTrait] {
 }
 
 @serializable
-abstract sealed case class TransactionlessProcessor[T](client:CouchbaseClient) extends AsyncCallable[T] with AsyncRunnable {
+abstract sealed case class TransactionlessProcessor[T](uris:List[URI]) extends AsyncCallable[T] with AsyncRunnable {
   override def run(tranRunner:TransactionRunner) {
     val result = call(tranRunner)
     // TODO Log the result
   }
+  def client = PersistenceServiceCloudbaseImpl.client(uris)
 }
 
-case class GetServersOperation(override val client:CouchbaseClient,private val view:View, private val transcoder:Transcoder[ServerTrait]) extends TransactionlessProcessor[List[ServerTrait]](client) {
+case class GetServersOperation(override val uris:List[URI], private val transcoder:Transcoder[ServerTrait]) extends TransactionlessProcessor[List[ServerTrait]](uris) {
   override def call(tranRunner:TransactionRunner) = {
     val query = new Query
+    val view = client.getView("servers","all_servers")
     val resp = client.query(view,query)
     
     resp.map( (row : ViewRow) => {
@@ -135,8 +140,20 @@ case class GetServersOperation(override val client:CouchbaseClient,private val v
   }
 }
 
+case class UpdateServersOperation(override val uris:List[URI], private val transcoder:Transcoder[ServerTrait]) extends TransactionlessProcessor[Unit](uris) {
+  override def call(tranRunner:TransactionRunner) = {
+    val query = new Query
+    val status = new SWTORServerParser()
+    val servers = status.servers
+    val transcoder = ServerTranscoder()
+    servers.foreach( server => 
+      client.set(server.name.toString.replace(" ",""), Int.MaxValue, server, transcoder) )
+    
+  }
+}
+
 @serializable
-sealed case class OperationResult[T](private val callback:ResultHandler[T]) extends AsyncTaskCallback[T] {
+sealed case class OperationResult[T](private val callback:ResultHandler[T]) extends AsyncTaskCallback[T] with Logging {
   var managedRef : ManagedReference[ResultHandler[T]] = null
   var ref : ResultHandler[T] = null
   callback match {
@@ -152,7 +169,7 @@ sealed case class OperationResult[T](private val callback:ResultHandler[T]) exte
       managedRef.get.result(result)
   }
   def notifyFailed(error:Throwable) {
-    // TODO Log error
+    logger.error("Error running task",error)
   }
   
 }

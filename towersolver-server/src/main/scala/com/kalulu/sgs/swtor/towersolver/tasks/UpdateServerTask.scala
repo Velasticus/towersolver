@@ -17,13 +17,18 @@ class UpdateServerTask(val ref : ManagedReference[ServerList]) extends Task with
   def result(result: List[ServerTrait]): Unit = { 
     val list = ref.getForUpdate()
     list.servers = result
-    logger.debug("Updating server list took " + ( compat.Platform.currentTime - start ) + " ms")
+    logger.trace("Updating server list took " + ( compat.Platform.currentTime - start ) + " ms")
   }
 
   def run(): Unit = {
-    val persistence = AppContext.getManager(classOf[PersistenceManager])
-    start = compat.Platform.currentTime
-    persistence.servers(this)
+    try {
+      logger.trace("Updating server list")
+      val persistence = AppContext.getManager(classOf[PersistenceManager])
+      start = compat.Platform.currentTime
+      persistence.servers(this)
+    } catch {
+      case e => logger.error("Error updating servers: " + e,e) 
+    } 
   }
 
 }
