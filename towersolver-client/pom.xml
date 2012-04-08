@@ -50,6 +50,10 @@
     	<artifactId>scala-swing</artifactId>
     	<version>${scala.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.kalulu.swtor.towersolver</groupId>
+      <artifactId>towersolver-protocol</artifactId>
+    </dependency>
   </dependencies>
 
   <build>

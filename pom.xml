@@ -13,6 +13,31 @@
     <module>towersolver-server</module>
     <module>towersolver-client</module>
     <module>avro-utils</module>
+    <module>towersolver-protocol</module>
   </modules>
   <version>0.0.1-SNAPSHOT</version>
+
+  <properties>
+    <org.reddwarfserver.version>0.10.3-SNAPSHOT</org.reddwarfserver.version>
+    <towersolver.protocol.version>0.0.1-SNAPSHOT</towersolver.protocol.version>
+  </properties>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>scala-tools.org</id>
+      <name>Scala-Tools Maven2 Repository</name>
+      <url>http://scala-tools.org/repo-releases</url>
+    </pluginRepository>
+  </pluginRepositories>
+  
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>${groupId}</groupId>
+        <artifactId>towersolver-protocol</artifactId>
+        <version>${towersolver.protocol.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
 </project>

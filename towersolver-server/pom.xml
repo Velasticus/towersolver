@@ -9,18 +9,6 @@
   	<relativePath>../pom.xml</relativePath>
   </parent>
 
-  <properties>
-    <org.reddwarfserver.version>0.10.3-SNAPSHOT</org.reddwarfserver.version>
-  </properties>
-
-  <pluginRepositories>
-    <pluginRepository>
-      <id>scala-tools.org</id>
-      <name>Scala-Tools Maven2 Repository</name>
-      <url>http://scala-tools.org/repo-releases</url>
-    </pluginRepository>
-  </pluginRepositories>
-
   <dependencies>
     <dependency>
       <groupId>org.scala-lang</groupId>
@@ -84,26 +72,21 @@
       <artifactId>sgs-async-task-service</artifactId>
       <version>0.2-SNAPSHOT</version>
     </dependency>
+    <dependency>
+      <groupId>com.kalulu.swtor.towersolver</groupId>
+      <artifactId>avro-utils</artifactId>
+      <version>${version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.kalulu.swtor.towersolver</groupId>
+      <artifactId>towersolver-protocol</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
     <sourceDirectory>src/main/scala</sourceDirectory>
     <testSourceDirectory>src/test/scala</testSourceDirectory>
     <plugins>
-      <plugin>
-        <groupId>org.apache.avro</groupId>
-        <artifactId>avro-maven-plugin</artifactId>
-        <configuration>
-          <templateDirectory>avro/templates/</templateDirectory>
-        </configuration>
-        <dependencies>
-          <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>avro-utils</artifactId>
-            <version>${version}</version>
-          </dependency>
-        </dependencies>
-      </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>

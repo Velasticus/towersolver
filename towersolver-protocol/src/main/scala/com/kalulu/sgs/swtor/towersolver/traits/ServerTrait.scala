@@ -5,6 +5,7 @@ import com.kalulu.sgs.swtor.towersolver.protocol.server.ServerType
 import com.kalulu.sgs.swtor.towersolver.protocol.server.ServerContinent
 import com.kalulu.sgs.swtor.towersolver.protocol.server.ServerStatus
 import com.kalulu.sgs.swtor.towersolver.protocol.server.ServerPopulation
+import com.kalulu.sgs.swtor.towersolver.protocol.server.SingleServer
 
 trait ServerTrait {
 
@@ -14,5 +15,7 @@ trait ServerTrait {
   def continent : ServerContinent
   var population : ServerPopulation
   var status : ServerStatus
+  
+  def singleServer : SingleServer
   
 }

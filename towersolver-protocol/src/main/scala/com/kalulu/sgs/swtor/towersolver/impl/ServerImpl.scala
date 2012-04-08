@@ -16,4 +16,6 @@ case class ServerImpl(val server : SingleServer) extends ServerTrait {
   override def status = server.getStatus
   override def status_= (status:ServerStatus) {server.setStatus(status)}
   
+  override def singleServer = server
+  
 }
