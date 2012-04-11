@@ -122,7 +122,7 @@ class SpecificContextResponder(protected val protocol:Protocol,impl:Any, protect
     // Grab meta-data from plugins
     context.setResponsePayload(payload);
     rpcMetaPlugins.foreach( _.serverSendResponse(context) )
-    SpecificContextResponder.META_WRITER.write(context.responseCallMeta.toMap, out);
+    SpecificContextResponder.META_WRITER.write(context.responseCallMeta, out);
     out.flush();
     // Prepend handshake and append payload
     bbo.prepend(handshakeBuf);
@@ -217,6 +217,6 @@ object SpecificContextResponder {
   private final val REMOTE = new ThreadLocal[Protocol]();
 
   private final val META = Schema.createMap(Schema.create(Schema.Type.BYTES));
-  private final val META_READER = new GenericDatumReader[Map[String,ByteBuffer]](META);
-  private final val META_WRITER = new GenericDatumWriter[Map[String,ByteBuffer]](META);
+  private final val META_READER = new GenericDatumReader[java.util.Map[String,ByteBuffer]](META);
+  private final val META_WRITER = new GenericDatumWriter[java.util.Map[String,ByteBuffer]](META);
 }

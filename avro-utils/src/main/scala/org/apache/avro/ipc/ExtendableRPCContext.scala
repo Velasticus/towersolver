@@ -5,12 +5,12 @@ import java.nio.ByteBuffer
 
 class ExtendableRPCContext extends RPCContext {
   override def requestCallMeta = super.requestCallMeta()
-  def requestCallMeta_= (newmeta:Map[String,ByteBuffer]) = super.setRequestCallMeta(newmeta)
-  def setRequestCallMeta1 (newmeta:Map[String,ByteBuffer]) = super.setRequestCallMeta(newmeta)
-  def requestHandshakeMeta_= (newmeta:Map[String,ByteBuffer]) = super.setRequestHandshakeMeta(newmeta)
+  def requestCallMeta_= (newmeta:java.util.Map[String,ByteBuffer]) = super.setRequestCallMeta(newmeta)
+  def setRequestCallMeta1 (newmeta:java.util.Map[String,ByteBuffer]) = super.setRequestCallMeta(newmeta)
+  def requestHandshakeMeta_= (newmeta:java.util.Map[String,ByteBuffer]) = super.setRequestHandshakeMeta(newmeta)
   def requestPayload_= (payload:List[ByteBuffer]) = super.setRequestPayload(payload)
   
-  def responseCallMeta_= (newmeta:Map[String,ByteBuffer]) = super.setResponseCallMeta(newmeta)
+  def responseCallMeta_= (newmeta:java.util.Map[String,ByteBuffer]) = super.setResponseCallMeta(newmeta)
   override def responseCallMeta = super.responseCallMeta()
   
   def response_= (response:Any) = super.setResponse(response)
