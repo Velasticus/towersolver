@@ -5,13 +5,17 @@ import java.io.UnsupportedEncodingException
 import java.net.PasswordAuthentication
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.LinkedTransferQueue
+import java.util.concurrent.TimeUnit
 import java.util.Properties
+import scala.collection.JavaConversions._
 import scala.collection.mutable.Map
 import scala.swing.BorderPanel.Position.Center
 import scala.swing.BorderPanel.Position.South
 import scala.swing.BorderPanel.Position.West
 import scala.swing.event.EditDone
 import scala.swing.BorderPanel
+import scala.swing.Button
 import scala.swing.ComboBox
 import scala.swing.Label
 import scala.swing.MainFrame
@@ -21,6 +25,9 @@ import scala.swing.SimpleSwingApplication
 import scala.swing.TextArea
 import scala.swing.TextField
 import scala.util.Random
+import org.apache.avro.ipc.specific.SpecificRequestor
+import org.apache.avro.ipc.Transceiver
+import com.kalulu.sgs.swtor.towersolver.protocol.MainLobby
 import com.sun.sgs.client.simple.SimpleClient
 import com.sun.sgs.client.simple.SimpleClientListener
 import com.sun.sgs.client.ClientChannel
@@ -28,8 +35,7 @@ import com.sun.sgs.client.ClientChannelListener
 import com.weiglewilczek.slf4s.Logging
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JComboBox
-import javax.swing.ComboBoxModel
-import scala.swing.event.SelectionChanged
+import com.kalulu.sgs.swtor.towersolver.impl.ServerImpl
 
 object TowerSolverClient extends SimpleSwingApplication with SimpleClientListener with Logging {
   
@@ -68,6 +74,11 @@ object TowerSolverClient extends SimpleSwingApplication with SimpleClientListene
     layout(inputField) = Center
   }
   
+  lazy val getServersButton = Button("Get Servers") {
+    val servers = requestor.GetServerList(null)
+    servers.map(ServerImpl(_).toString).foreach(appendOutput(_))
+  }
+  
   lazy val comboBox = new ComboBox[String](List()) {
     focusable = false
     lazy val comboBoxModel = new DefaultComboBoxModel[String]()
@@ -98,6 +109,7 @@ object TowerSolverClient extends SimpleSwingApplication with SimpleClientListene
 
     layout(inputPanel) = South    
     layout(comboBox) = West
+    layout(getServersButton) = West
       
   }
   
@@ -178,17 +190,29 @@ object TowerSolverClient extends SimpleSwingApplication with SimpleClientListene
     setStatus("Disconnected: " + reason)
   }
   
+  var requestor : MainLobby = null
+  
   override def joinedChannel(channel:ClientChannel) = {
-    val name = channel.getName
-    channelsByName.put(name, channel)
-    appendOutput("Joined to channel " + name)
-    comboBox.comboBoxModel.addElement(name)
+    channel.getName match {
+      case "LOBBY_CHAN" => {
+        val transceiver = new LobbyTransceiver(channel,queue)
+        requestor = SpecificRequestor.getClient(classOf[MainLobby],transceiver)
+      }
+      case name => {
+        channelsByName.put(name, channel)
+        appendOutput("Joined to channel " + name)
+        comboBox.comboBoxModel.addElement(name)
+      }
+    }
     
     new TowerSolverChannelListener()
   }
-    
+
+  val queue = new LinkedTransferQueue[ByteBuffer]()
+
   override def receivedMessage(message:ByteBuffer) {
-    appendOutput("Server sent: " + decode(message))
+    //appendOutput("Server sent: " + decode(message))
+    queue.tryTransfer(message,5,TimeUnit.SECONDS)
   }
   
   override def reconnected = {
@@ -226,3 +250,35 @@ object TowerSolverClient extends SimpleSwingApplication with SimpleClientListene
   }
 }
 
+class LobbyTransceiver(val channel : ClientChannel, queue : LinkedTransferQueue[ByteBuffer]) extends Transceiver with ClientChannelListener with Logging {
+
+  def this(channel : ClientChannel) = this(channel,new LinkedTransferQueue[ByteBuffer])
+  
+  /** Called by the default definition of {@link #transceive(List)}.*/
+  override def readBuffers() : java.util.List[ByteBuffer] = {
+    queue.poll(5,TimeUnit.SECONDS) :: Nil
+  }
+
+  /** Called by {@link Requestor#request(String,Object)} for one-way messages.*/
+  override def writeBuffers(buffers:java.util.List[ByteBuffer]) {
+    val size = buffers.map({
+      case(x)=>Math.max(
+          x.position,
+          x.limit)})
+          .reduce(_+_)
+    val bb = ByteBuffer.allocate(size+1)
+    buffers.foreach(bb.put(_))
+    bb.flip()
+    channel.send(bb)
+  }
+
+  override def leftChannel(channel:ClientChannel) {
+    //appendOutput("Removed from channel " + channel.getName)
+  }
+  
+  override def receivedMessage(channel:ClientChannel, message:ByteBuffer) {
+    queue.tryTransfer(message,5,TimeUnit.SECONDS)
+  }
+  
+  override def getRemoteName = channel.getName
+}
