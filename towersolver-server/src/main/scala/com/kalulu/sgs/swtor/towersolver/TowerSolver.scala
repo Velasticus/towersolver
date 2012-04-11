@@ -1,54 +1,69 @@
 package com.kalulu.sgs.swtor.towersolver
 
+import java.io.UnsupportedEncodingException
+import java.nio.ByteBuffer
 import java.util.Properties
+import scala.annotation.serializable
+import com.kalulu.sgs.swtor.towersolver.tasks.ServerList
+import com.kalulu.sgs.swtor.towersolver.tasks.UpdateServerTask
+import com.kalulu.sgs.swtor.towersolver.traits.PersistenceManager
+import com.kalulu.sgs.swtor.towersolver.traits.Player
+import com.sun.sgs.app.util.ScalableDeque
 import com.sun.sgs.app.AppContext
 import com.sun.sgs.app.AppListener
+import com.sun.sgs.app.Channel
+import com.sun.sgs.app.ChannelListener
 import com.sun.sgs.app.ClientSession
 import com.sun.sgs.app.ClientSessionListener
+import com.sun.sgs.app.Delivery
+import com.sun.sgs.app.ManagedReference
 import com.sun.sgs.app.Task
 import com.weiglewilczek.slf4s.Logging
-import com.sun.sgs.app.ManagedObject
-import com.sun.sgs.app.ManagedReference
-import java.nio.ByteBuffer
-import java.io.UnsupportedEncodingException
-import com.sun.sgs.app.Channel
-import com.sun.sgs.app.Delivery
-import com.sun.sgs.app.ChannelListener
-import com.kalulu.sgs.swtor.towersolver.traits.PersistenceManager
-import com.kalulu.sgs.swtor.towersolver.persistence.ResultHandler
-import com.kalulu.sgs.swtor.towersolver.traits.ServerTrait
-import scala.collection.mutable.MutableList
-import com.kalulu.sgs.swtor.towersolver.tasks.UpdateServerTask
-import com.kalulu.sgs.swtor.towersolver.tasks.ServerList
+import TowerSolver.CHANNEL_1_NAME
+import TowerSolver.CHANNEL_2_NAME
+import com.kalulu.sgs.swtor.towersolver.tasks.LoginUserTask
+import com.kalulu.sgs.swtor.towersolver.impl.TowerSolverLobby
 
 @serializable
 class TowerSolver extends AppListener with Task with Logging {
   private var loginCount = 0
   private var channel1 : ManagedReference[Channel] = null
   private var servers : ManagedReference[List[String]] = null
+  private var loginQueueRef : ManagedReference[ScalableDeque[ClientSession]] = null
+  private var lobbyRef : ManagedReference[TowerSolverLobby] = null
+
   private var persistence : PersistenceManager = null
-  
   import TowerSolver._
   
   override def initialize(props:Properties) {
      
     val taskManager = AppContext.getTaskManager
     val chanManager = AppContext.getChannelManager
+    val dataManager = AppContext.getDataManager
     
     val c1 = chanManager.createChannel(CHANNEL_1_NAME, null, Delivery.RELIABLE)
-    channel1 = AppContext.getDataManager.createReference(c1)
+    channel1 = dataManager.createReference(c1)
     chanManager.createChannel(CHANNEL_2_NAME, new TowerSolverChannelListener, Delivery.RELIABLE)
   
     val servers = ServerList()
-    val serversRef = AppContext.getDataManager.createReference(servers)
+    val serversRef = dataManager.createReference(servers)
+
+    // TODO - Use an array of queues if you see contention here
+    val loginQueue = new ScalableDeque[ClientSession]()
+    loginQueueRef = dataManager.createReference(loginQueue)
     
     taskManager.schedulePeriodicTask(new UpdateServerTask(serversRef),5000,5000)
-  }
     
+    val lobby = new TowerSolverLobby(serversRef)
+    lobbyRef = AppContext.getDataManager.createReference(lobby)
+    
+    taskManager.scheduleTask(new LoginUserTask(loginQueueRef,lobbyRef))
+  }
+
   override def loggedIn(session:ClientSession) : ClientSessionListener = {
-    loginCount+=1
     logger.info("User " + session.getName + " has almost logged in")
-    new TowerUserSessionListener(session,channel1,loginCount)
+    loginQueueRef.getForUpdate.add(session)
+    new TowerUserSessionListener(session)
   }
 
   override def run : Unit = {
@@ -65,15 +80,10 @@ object TowerSolver {
   private final val PERIOD_MS = 5000
 }
 
-@serializable
-class TowerUserSessionListener(session:ManagedReference[ClientSession],channel:ManagedReference[Channel],private val name:String,private val loginCount:Int) extends ClientSessionListener with Logging {
-  def this(session:ClientSession,channel:ManagedReference[Channel],loginCount:Int) = this(AppContext.getDataManager().createReference(session),channel,session.getName,loginCount)
+class TowerUserSessionListener(session:ManagedReference[ClientSession],private val name:String) extends ClientSessionListener with Logging with Serializable {
+  def this(session:ClientSession) = this(AppContext.getDataManager().createReference(session),session.getName)
   final val MESSAGE_CHARSET = "UTF-8"
     
-  channel.get.join(session.get)
-  
-  AppContext.getChannelManager.getChannel(TowerSolver.CHANNEL_2_NAME).join(session.get)
-  
   override def receivedMessage(message:ByteBuffer) = {
     val s = decode(message)
     logger.info(s)
@@ -84,6 +94,7 @@ class TowerUserSessionListener(session:ManagedReference[ClientSession],channel:M
     val g = if(graceful) "gracefully" else "forced"
     logger.info("User " + name + " has logged out " + g)
   }
+
   def decode(b:ByteBuffer) = {
     try {
       val bytes = new Array[Byte](b.remaining)
