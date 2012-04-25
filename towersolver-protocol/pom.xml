@@ -102,4 +102,8 @@
       </plugin>
     </plugins>
   </reporting>
+  <properties>
+    <java.source>1.6</java.source>
+    <java.target>1.6</java.target>
+  </properties>
 </project>
