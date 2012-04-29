@@ -34,6 +34,7 @@ import com.kalulu.sgs.swtor.towersolver.impl.ServerImpl
 import org.cyberneko.html.HTMLConfiguration
 import org.cyberneko.html.filters.Purifier
 import org.cyberneko.html.filters.Writer
+import scala.util.matching.Regex.Match
 
 
 class SWTORServerParser (urlLoc:String = "http://www.swtor.com/server-status") {
@@ -54,10 +55,13 @@ class SWTORServerParser (urlLoc:String = "http://www.swtor.com/server-status") {
   private var textProcessor : ( EvText => Unit ) = processTextNode
   private def processTextNode(node:EvText) = {}
   private def processContinent(node:EvText) = {
+    val Region = "(?s)(.*) Servers.*".r
     node.text match {
-      case "US Servers" => continent = ServerContinent.AMERICA
-      case "European Servers" => continent = ServerContinent.EUROPE
-      case "Asia Pacific Servers" => continent = ServerContinent.ASIA
+      case Region(region) => region match {
+        case "US" => continent = ServerContinent.AMERICA
+        case "European" => continent = ServerContinent.EUROPE
+        case "Asia Pacific" => continent = ServerContinent.ASIA
+      }
     }
   }
   private def processServerName(node:EvText) = {
@@ -70,7 +74,7 @@ class SWTORServerParser (urlLoc:String = "http://www.swtor.com/server-status") {
     override def startElement(uri:String,localName:String,qName:String,attrs:Attributes) = {
       val attrMap = attr2map(attrs)
       qName match {
-        case "h3" =>
+        case "h2" =>
           if (attrMap.getOrElse("class","").contains("serverStatusTitle") ) {
             text = new StringBuilder()
             textProcessor = processContinent
