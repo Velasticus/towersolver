@@ -32,12 +32,12 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>${groupId}</groupId>
+        <groupId>${project.groupId}</groupId>
         <artifactId>towersolver-protocol</artifactId>
         <version>${towersolver.protocol.version}</version>
       </dependency>
       <dependency>
-        <groupId>${groupId}</groupId>
+        <groupId>${project.groupId}</groupId>
         <artifactId>avro-utils</artifactId>
         <version>${version}</version>
       </dependency>
