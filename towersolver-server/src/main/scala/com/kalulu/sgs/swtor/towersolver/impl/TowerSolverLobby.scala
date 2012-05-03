@@ -30,7 +30,7 @@ class TowerSolverLobby(val serversRef : ManagedReference[ServerList]) extends Ma
     
   def addUser(player:ManagedReference[Player]) {
     usersRef.get.add(player)
-    chanRef.get.join(player.get.session.get)
+    //chanRef.get.join(player.get.session.get)
   }
   
   def receivedMessage(chan:Channel, session:ClientSession, msg:ByteBuffer) {
